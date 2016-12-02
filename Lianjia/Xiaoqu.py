@@ -1,84 +1,189 @@
 
 import requests
 from bs4 import BeautifulSoup
+import time
+import math
+from multiprocessing.dummy import Pool as ThreadPool
 
 
+import datetime
+from functools import wraps
 
 
 
 URL = 'http://sh.lianjia.com'
-xiaoqu_url = 'http://sh.lianjia.com/xiaoqu/d1rs'
+xiaoqu_url = 'http://sh.lianjia.com/xiaoqu/d'
 detail_url = 'http://sh.lianjia.com/xiaoqu/5011102207057.html'
 
-# def get_infos(url):
-#     res = urllib2.urlopen(url)
+def fn_timer(function):
+    @wraps(function)
+    def function_timer(*args, **kwargs):
+        t0 = datetime.datetime.now()
+        print(t0)
+        result = function(*args, **kwargs)
+        t1 = datetime.datetime.now()
+        print(t1)
+        print("Total time running %s: %s seconds" %
+              (function.__name__, str(t1 - t0))
+              )
+        return result
 
-#     content = res.read().decode('utf-8')
+    return function_timer
 
-#     soup = BeautifulSoup(content,"html.parser")
-
-
-def download_page(url):
+def download_page(url, retries=3):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
-    data = requests.get(url, headers=headers).content
+    try:
+        data = requests.get(url, headers=headers).content
+    except Exception as err:
+        print("fail to dowload the page, reason: ")
+        print(err)
+        if retries>0:
+            time.sleep(2)
+            print("try again")
+            return download_page(url,retries-1)
+        else:
+            print("failed in scaping : %s" % url)
+            return ''        
+    
     return data
 
+def get_page_num(link):
+    soup = BeautifulSoup(download_page(link),"html.parser")
 
-def parse_page(html):
-    soup = BeautifulSoup(html,"html.parser")
+    sum = soup.find('div', attrs={'class': 'list-head clear'}).find('span').getText()
+    sum = int(sum)
+    page_num = math.ceil(sum/20)
+    print(sum)
+    print(page_num)
+    return page_num
+
+def get_urls(num):
+    print("----------getting page %d \n" % num)
+    link = xiaoqu_url+str(num)
+
+    results = []
+    soup = BeautifulSoup(download_page(link),"html.parser")
     link_list = []
-    name_list = []
     xiaoqu_list = soup.findAll('div', attrs={'class': 'info-panel'})
-    # print(xiaoqu_list)
 
     for xiaoqu in xiaoqu_list:
-        # detail = movie.find('div', attrs={'class': 'hd'})
         link = xiaoqu.find('a').get('href')
-        name = xiaoqu.find('a').get('title')
         link_list.append(link)
-        name_list.append(name)
+    
+    return link_list
 
-        
-
-
-    # print(link_list, name_list)
-
-    for link, name in zip(link_list, name_list):
-        
-        parse_detail_page(name, link)
+    
 
 
-def parse_detail_page(name, link):
+def parse_page(link):
     result = ' '
     detail_link = URL + link
     detail_soup = BeautifulSoup(download_page(detail_link),"html.parser")
+    # get the price
     price = detail_soup.find('span',attrs={'class':'p'}).getText().strip()
-    # print(price)
+
+    # get name, latitude and longitude
+    coord = detail_soup.find('a',attrs={'class':'actshowMap'}).get('xiaoqu')
+
+    coord = coord.split(',')
+
+    latitude = coord[1]
+    longitude = coord[0].strip('[')
+    # name = coord[2].strip(']').strip("'")
+    name = coord[2][2:-2]
+
+    # get address
+    spans = detail_soup.find('span',attrs={'class':'t'}).findAll('span')
+    adr = spans[0].getText()[1:-1] + spans[1].getText().strip()
+
+    result = name + '\t' + link + '\t' + price + '\t' + latitude + '\t' + longitude + '\t' + adr
+
+    # get other info
     others = []
     other_info = detail_soup.findAll('span',attrs={'class':'other'})
-    # print(other_info)
+
     for info in other_info:
-        # print(info.getText().strip())
         others.append(info.getText().strip())
     
-    result = name + ' ' + link + ' ' + price
-    for other in others:
-        result += ' ' + other
-    print(result)
+    for i in [0,1,5,6]:
+        result += '\t' + others[i]
+ 
+    result +=  '\n'
+    # print(result)
+    return result
+    
+    # time.sleep(0.5)
 
 
-    # next_page = soup.find('span', attrs={'class': 'next'}).find('a')
+def go_thread(num):
+    print('start thread !!! \n')
+    results = []
+    url_list = get_urls(num)
+    
+    for url in url_list:
+        print('+1', end='')
+        results.append(parse_page(url))
+    
+    with open('shanghai.txt', 'a') as f:
+        for res in results:
+            f.write(res)
+        print("20 xiaoqu written successfully \n")
+        
+    # re = parse_page(url)
+    # # print('go_thread end')
+    # return re
+    
+    # print('-----------------------------start scraping page !!!')
+    # # urls = get_urls(xiaoqu_url+str(i))
+    # pool = ThreadPool(20)
+    
+    # results = pool.map(parse_page,urls)
+    
+    
+    # pool.close()
+    # # pool.setDaemon(True)
+    # pool.join()
+    
+    # print('-----------------------------got page  !!!')
+    # return results
 
-    # if next_page:
-    #     return movie_title_list, URL + next_page['href']
-    # return movie_title_list, None
-
-
+    
+@fn_timer   
 def main():
-    # parse_detail_page('hh', detail_url)
-    url = xiaoqu_url
-    html = download_page(url)
-    parse_page(html)
+    # detail_soup = BeautifulSoup(download_page(detail_url),"html.parser")
+    # coord = detail_soup.find('a',attrs={'class':'actshowMap'}).get('xiaoqu')
+
+
+    # html = download_page(url)
+    # urls = parse_page(html)
+
+    page_num = get_page_num(xiaoqu_url + '1')
+    
+
+    # xiaoqu_urls = []
+    # for i in range(1,page_num+1):
+        
+    #     xiaoqu_urls[-1:-1] = get_urls(xiaoqu_url+str(i))
+    #     print('got page %d !!! %d pages left!!! size of url list is %d !!!' % (i, page_num-i,len(xiaoqu_urls)))
+     
+    
+
+    pool = ThreadPool(20)
+    pool.map(go_thread,list(range(1,page_num+1)))
+    pool.close()
+    pool.join() 
+    print("good good ")
+
+    
+ 
+    # for i in range(89,101):
+        
+    #     url = xiaoqu_url + str(i)
+    #     print("start scraping " + url)
+    # # url = xiaoqu_url
+    #     html = download_page(url)
+    #     parse_page(html)
+    #     print("# ----------------- got page %d !!!" % i)
 
     # while url:
     #     html = download_page(url)

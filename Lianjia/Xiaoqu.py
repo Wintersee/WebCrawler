@@ -15,6 +15,7 @@ URL = 'http://sh.lianjia.com'
 xiaoqu_url = 'http://sh.lianjia.com/xiaoqu/d'
 detail_url = 'http://sh.lianjia.com/xiaoqu/5011102207057.html'
 
+
 def fn_timer(function):
     @wraps(function)
     def function_timer(*args, **kwargs):
@@ -30,15 +31,17 @@ def fn_timer(function):
 
     return function_timer
 
+
 def download_page(url, retries=3):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
+    # time.sleep(0.5)
     try:
         data = requests.get(url, headers=headers).content
     except Exception as err:
         print("fail to dowload the page, reason: ")
         print(err)
         if retries>0:
-            time.sleep(2)
+            time.sleep(3)
             print("try again")
             return download_page(url,retries-1)
         else:
@@ -47,21 +50,23 @@ def download_page(url, retries=3):
     
     return data
 
-def get_page_num(link):
-    soup = BeautifulSoup(download_page(link),"html.parser")
 
-    sum = soup.find('div', attrs={'class': 'list-head clear'}).find('span').getText()
-    sum = int(sum)
-    page_num = math.ceil(sum/20)
-    print(sum)
+def get_page_num(link):
+    http = download_page(link)
+    soup = BeautifulSoup(http, "html.parser")
+    xiaoqu_sum = soup.find('div', attrs={'class': 'list-head clear'}).find('span').getText()
+    xiaoqu_sum = int(xiaoqu_sum)
+    page_num = math.ceil(xiaoqu_sum/20)
+    print(xiaoqu_sum)
     print(page_num)
     return page_num
+
 
 def get_urls(num):
     print("----------getting page %d \n" % num)
     link = xiaoqu_url+str(num)
 
-    results = []
+    # results = []
     soup = BeautifulSoup(download_page(link),"html.parser")
     link_list = []
     xiaoqu_list = soup.findAll('div', attrs={'class': 'info-panel'})
@@ -72,18 +77,25 @@ def get_urls(num):
     
     return link_list
 
-    
-
 
 def parse_page(link):
-    result = ' '
+
     detail_link = URL + link
-    detail_soup = BeautifulSoup(download_page(detail_link),"html.parser")
+    http = download_page(detail_link)
+    detail_soup = BeautifulSoup(http, "html.parser")
     # get the price
-    price = detail_soup.find('span',attrs={'class':'p'}).getText().strip()
+    # print(type(detail_soup))
+    # print(detail_soup.find('span',attrs={'class': "p"}).getText())
+    try:
+        price = detail_soup.find('span',attrs={'class': "p"}).getText().strip()
+    except Exception as err:
+
+        print(err)
+        print(detail_soup)
+
 
     # get name, latitude and longitude
-    coord = detail_soup.find('a',attrs={'class':'actshowMap'}).get('xiaoqu')
+    coord = detail_soup.find('a',attrs={'class': 'actshowMap'}).get('xiaoqu')
 
     coord = coord.split(',')
 
@@ -108,8 +120,7 @@ def parse_page(link):
     for i in [0,1,5,6]:
         result += '\t' + others[i]
  
-    result +=  '\n'
-    # print(result)
+    result += '\n'
     return result
     
     # time.sleep(0.5)
@@ -128,7 +139,7 @@ def go_thread(num):
         for res in results:
             f.write(res)
         print("20 xiaoqu written successfully \n")
-        
+
     # re = parse_page(url)
     # # print('go_thread end')
     # return re
@@ -165,11 +176,9 @@ def main():
         
     #     xiaoqu_urls[-1:-1] = get_urls(xiaoqu_url+str(i))
     #     print('got page %d !!! %d pages left!!! size of url list is %d !!!' % (i, page_num-i,len(xiaoqu_urls)))
-     
-    
 
-    pool = ThreadPool(20)
-    pool.map(go_thread,list(range(1,page_num+1)))
+    pool = ThreadPool(30)
+    pool.map(go_thread, list(range(1, page_num+1)))
     pool.close()
     pool.join() 
     print("good good ")

@@ -109,7 +109,7 @@ def get_record(residence_id, retries=10):
     else:
         # print(json_data)
         info = json_data['project'][0]
-        result = info['projname'] + '\t' + info['coverimg'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
+        result = info['projname'] + '\t' + info['xiaoqudomain'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
                  + info['coordy'] + '\t' + info['addresslong'] + '\t' + info['purpose']
         print(result)
     return result

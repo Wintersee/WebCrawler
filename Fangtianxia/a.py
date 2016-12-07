@@ -1,5 +1,3 @@
-#coding=utf8
-
 import requests
 from bs4 import BeautifulSoup
 import time, random
@@ -7,6 +5,7 @@ import math
 from multiprocessing.dummy import Pool as ThreadPool
 from functions import fn_timer
 from json import loads as JSON
+import re
 
 URL = 'http://esf.fang.com'
 RESIDENCE_URL = 'http://esf.fang.com/housing/'
@@ -17,16 +16,15 @@ def download_page(url, retries=10):
     try:
         time.sleep(round(random.uniform(1, 5), 2))
         response = requests.get(url, headers=headers)
-        print(response.encoding)
         if response.encoding == 'gb2312':
             data = response.content.decode("gbk").encode('utf-8')
         if response.encoding == 'ISO-8859-1':
-            data = response.content.decode("ISO-8859-1").encode('utf-8')
-        # data = response.content.decode("gbk").encode('utf-8')
+            data = response.content
 
         soup = BeautifulSoup(data, "html.parser")
 
-        test = soup.find('div', attrs={'class': 's4Box'}).getText()
+        if 'aspx?newcode=' not in url:
+            test = soup.find('a', attrs={'href': 'http://wap.fang.com/xc/mobile.html'}).getText()
 
     except Exception as err:
         print("|||test failed ! didn't get the right content: "+str(err)+'|||')
@@ -52,7 +50,6 @@ def get_districts_urls(link):
         districts = letter.findAll('a')
         for district in districts:
             link_list.append(district.get('href'))
-    print(len(link_list))
     return link_list
 
 
@@ -62,40 +59,34 @@ def go_thread(link):
     soup = download_page(url)
 
     page_num = get_page_num(soup)
-    print('in ' + url + '   there are ' + str(page_num) + ' pages  ')
+    # print('in ' + url + '   there are ' + str(page_num) + ' pages  ')
 
     for i in range(1, page_num+1):
         results = []
 
         page_url = url[0:-6] + str(i) + '_0_0/'
-        print(page_url)
+        # print(page_url)
 
         soup = download_page(page_url)
-        # print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
-        # print(soup)
-        # print("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
         div_list = soup.findAll('dl', attrs={'class': 'plotListwrap clearfix'})
-        # print(str(len(residence_list)) + ' residence ')
 
         for div in div_list:
             residence = div.find('a', attrs={'class': 'plotTit'}).get('href')
-            type = div.find('span', attrs={'class': 'plotFangType'}).getText()
-            if type == '写字楼' or type == '商铺':
+            residence_type = div.find('span', attrs={'class': 'plotFangType'}).getText()
+            # print(residence_type)
 
-                with open('fangtianxia_beijing_xiezilou.txt', 'a') as f:
-                    f.write(residence + '\n')
+            if residence_type == '写字楼' or residence_type == '商铺':
+                res = get_record_2(residence)
             else:
-
                 residence_id = get_id(residence)
-                print(residence_id)
-                re = get_record(residence_id)
-                if re:
-                    print(re)
-                    results.append(re)
+                # print(residence_id)
+                res = get_record(residence_id)
+            if re:
+                results.append(res)
 
         with open('fangtianxia_beijing.txt', 'a') as f:
-            for re in results:
-                f.write(re + '\n')
+            for res in results:
+                f.write(res + '\n')
                 print('+1', end=' ')
 
 
@@ -109,28 +100,58 @@ def get_page_num(soup):
 
 
 def get_id(link):
-    print(link)
+    # print(link+'     lol')
     detail_soup = download_page(link)
     # print(detail_soup)
     residence_id = detail_soup.find('input', attrs={'id': "projCode"}).get('value')
+    # print(str(residence_id))
     return residence_id
+
+
+def get_record_2(link):
+
+    soup = download_page(link)
+    result = ''
+    try:
+        info = soup.find('div', attrs={'class': 'lpblbox borderb01'})
+        name = info.find('span', attrs={'class': 'biaoti'}).getText()
+        price = info.find('strong', attrs={'class': 'org font14'}).getText()
+        address = info.find('span', attrs={'class': 'gray6'}).find('span').getText()
+        purpose = info.find('div', attrs={'class': 'xiangqing'}).find('dd').getText()[5:]
+
+        map_url = soup.find('div', attrs={'id': 'map'}).find('iframe').get('src')
+        map_soup = download_page(map_url)
+        script = map_soup.find('script', attrs={'type': 'text/javascript', 'language': 'javascript'})
+        pattern = re.compile(r'px\:(.*)\"\,')
+        match = pattern.search(str(script))
+        res = match.group().split(',')
+        px = res[0][4:-1]
+        py = res[1][4:-1]
+
+    except Exception as err:
+        print("|||failed get_record_2  |||" + str(err))
+        with open('fangtianxia_beijing_failed.txt', 'a') as f:
+            f.write(link + '\n')
+    else:
+        result = name + '\t' + link + '\t' + price + '\t' + px + '\t' + py + '\t' + address + '\t' + purpose
+        print(result)
+
+    return result
 
 
 def get_record(residence_id, retries=10):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
     xhr_url = 'http://esf.fang.com/newsecond/Map/Interfaces/baidu/GetTPointByKeyword.aspx?projcode='
     xhr_url += str(residence_id)
-    print(xhr_url)
+    # print(xhr_url)
 
     result = ''
 
     try:
         time.sleep(round(random.uniform(0, 3), 2))
         response = requests.get(xhr_url, headers=headers)
-        print(response.status_code)
         data = response.text
-        print('=====')
-        # print(data)
+
         json_data = JSON(str(data))
 
     except Exception as err:
@@ -146,35 +167,10 @@ def get_record(residence_id, retries=10):
     else:
         # print(json_data)
         info = json_data['project'][0]
-        result = info['projname'] + '\t' + info['coverimg'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
+        result = info['projname'] + '\t' + info['xiaoqudomain'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
                  + info['coordy'] + '\t' + info['addresslong'] + '\t' + info['purpose']
-
+        print(result)
     return result
-
-
-# def go_thread(num):
-#     print('!!!new thread mission!!!')
-#     results = []
-#     url_list = get_urls(num)
-#
-#     for url in url_list:
-#
-#         try:
-#             re = parse_page(url)
-#             results.append(re)
-#             print('+1', end='')
-#         except Exception as err:
-#             print("*** no result, reason: " + str(err) + "***")
-#             # print(err)
-#             with open('shanghai_failed_to_parse.txt', 'a') as f:
-#                 f.write(url+'\n')
-#
-#     lines[0] += len(results)
-#     with open('shanghai.txt', 'a') as f:
-#         for res in results:
-#             f.write(res)
-#         # print("20 xiaoqu written successfully \n")
-#         print("+++%d xiaoqu in file +++" % lines[0])
 
 
 @fn_timer
@@ -185,6 +181,8 @@ def main():
     # pool.map(go_thread, urls)
     # pool.close()
     # pool.join()
+    html = get_record(get_id('http://anhuali.fang.com/'))
+    print(html)
 
     go_thread('/housing/1_1121_0_0_0_0_1_0_0/')
 

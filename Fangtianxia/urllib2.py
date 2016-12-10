@@ -6,6 +6,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from functions import fn_timer
 from json import loads as JSON
 import re
+import urllib
 
 # URL = 'http://esf.sy.fang.com'
 # RESIDENCE_URL = 'http://esf.sy.fang.com/housing/'
@@ -15,26 +16,15 @@ import re
 # RESIDENCE_URL = 'http://esf.gz.fang.com/housing/'
 # CITY = 'guangzhou'
 
-# URL = 'http://esf.sjz.fang.com'
-# RESIDENCE_URL = 'http://esf.sjz.fang.com/housing/'
-# CITY = 'shijiazhuang'
+URL = 'http://esf.nn.fang.com'
+RESIDENCE_URL = 'http://esf.nn.fang.com/housing/'
+CITY = 'nanning'
 
-# URL = 'http://esf.cq.fang.com'
-# RESIDENCE_URL = 'http://esf.cq.fang.com/housing/'
-# CITY = 'chongqing'
-
-# URL = 'http://esf.wuhan.fang.com'
-# RESIDENCE_URL = 'http://esf.wuhan.fang.com/housing/'
-# CITY = 'wuhan'
-
-URL = 'http://esf.sz.fang.com'
-RESIDENCE_URL = 'http://esf.sz.fang.com/housing/'
-CITY = 'shenzhen'
 
 
 city_file = 'results/fangtianxia_' + CITY + '.txt'
 city_xiezilou_failed_file = 'results/fangtianxia_' + CITY + '_xiezilou_failed.txt'
-city_failed_file = 'results/fangtianxia_' + CITY + '_failed.txt'
+city_zhuzhai_failed_file = 'results/fangtianxia_' + CITY + '_zhuzhai_failed.txt'
 city_luanma_failed_file = 'results/fangtianxia_' + CITY + '_luanma_failed.txt'
 city_url_failed_file = 'results/fangtianxia_' + CITY + '_url_failed.txt'
 
@@ -42,22 +32,28 @@ city_url_failed_file = 'results/fangtianxia_' + CITY + '_url_failed.txt'
 # JINAN_RESIDENCE_URL = 'http://esf.jn.fang.com/housing/'
 
 
-def download_page(url, retries=30):
+def download_page(url, retries=10):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
 
     try:
         time.sleep(round(random.uniform(1, 5), 2))
-        response = requests.get(url, headers=headers)
-        # # print(response.encoding + '  response')
-        # if response.encoding == 'gb2312':
-        #     data = response.content.decode("GB18030").encode('utf-8')
-        # # if response.encoding == 'ISO-8859-1':
-        # else:
-        #     data = response.content.decode("GB18030").encode('utf-8')
-        data = response.content.decode('GB18030', 'replace').encode('utf-8', 'replace')
-        soup = BeautifulSoup(data, "html.parser")
 
-        # print(soup)
+        # # headers = {'User-Agent': user_agent}
+        # # data = urllib.parse.urlencode(values)
+        # # req = urllib.request.Request(url, headers)
+        # response = urllib.request.urlopen(url, headers)
+        # the_page = response.read()
+        # print(the_page.decode("utf8"))
+
+        response = requests.get(url, headers=headers)
+        # print(response.encoding + '  response')
+        if response.encoding == 'gb2312':
+            data = response.content.decode("GB18030").encode('utf-8')
+        # if response.encoding == 'ISO-8859-1':
+        else:
+            data = response.content.decode("GB18030").encode('utf-8')
+
+        soup = BeautifulSoup(data, "html.parser")
 
         if 'aspx?newcode=' not in url:
             test = soup.find('a', attrs={'href': 'http://wap.fang.com/xc/mobile.html'}).getText()
@@ -69,7 +65,7 @@ def download_page(url, retries=30):
             print("try again, %d times left" % int(retries-1))
             return download_page(url, retries - 1)
         else:
-            print("|||failed in scraping : %s|||" % url)
+            print("|||failed in scaping : %s|||" % url)
             with open(city_url_failed_file, 'a', 'utf-8') as f:
                 f.write(url+'\n')
             # return ''
@@ -86,6 +82,10 @@ def get_districts_urls(link):
         districts = letter.findAll('a')
         for district in districts:
             link_list.append(district.get('href'))
+
+    residence_sum = soup.find('b', attrs={'class': 'findplotNum'}).getText()
+    print(residence_sum)
+
     return link_list
 
 
@@ -105,18 +105,13 @@ def get_id(link):
     return residence_id
 
 
-def get_ids(soup, link):
+def get_ids(soup):
     script = soup.findAll('script', attrs={'type': 'text/javascript', 'src': '', 'language': ''})[1]
 
     pattern = re.compile(r'showhouseid(.*)\}')
     match = pattern.search(str(script))
-    if match:
-        ids = match.group()[14:-2].split(',')
-        print(ids)
-    else:
-        ids = ''
-        with open(city_luanma_failed_file, 'a') as sad:
-            sad.write(link + '\n')
+    ids = match.group()[14:-2].split(',')
+    print(ids)
     return ids
 
 
@@ -146,7 +141,7 @@ def get_record_2(div):
         if map_div:
             map_url = map_div.find('iframe').get('src')
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
-            v = 40
+            v = 20
             while v:
                 response = requests.get(map_url, headers=headers)
                 data = response.content
@@ -158,13 +153,9 @@ def get_record_2(div):
                     v -= 1
             pattern = re.compile(r'px\:(.*)\"\,')
             match = pattern.search(str(script))
-            if match:
-                res = match.group().split(',')
-                px = res[0][4:-1]
-                py = res[1][4:-1]
-            else:
-                px = '无'
-                py = '无'
+            res = match.group().split(',')
+            px = res[0][4:-1]
+            py = res[1][4:-1]
         else:
             px = '无'
             py = '无'
@@ -225,7 +216,7 @@ def get_record_2(div):
         #     return result
 
 
-def get_record(residence_id, retries=40):
+def get_record(residence_id, retries=20):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
     # xhr_url = 'http://esf.fang.com/newsecond/Map/Interfaces/baidu/GetTPointByKeyword.aspx?projcode='
     xhr_url = URL + '/newsecond/Map/Interfaces/baidu/GetTPointByKeyword.aspx?projcode='
@@ -237,36 +228,23 @@ def get_record(residence_id, retries=40):
     try:
         time.sleep(round(random.uniform(0, 3), 2))
         response = requests.get(xhr_url, headers=headers)
-        # ddata = response.text
-        # print('|||||||||||||||||||||||||')
-        # print(ddata)
-        # print('|||||||||||||||||||||||||')
-        data = response.content.decode('gbk', 'replace')
-        # print(data)
-        # print('|||||||||||||||||||||||||')
-        # soup = BeautifulSoup(data, "html.parser")
-        #
-        # print(response.headers['content-type'])
-        # print(response.encoding)
-        # print(response.apparent_encoding)
-        # print(requests.utils.get_encodings_from_content(response.text))
+        data = response.text
 
-        json_data = JSON(str(data), encoding='utf-8')
-        info = json_data['project'][0]
+        json_data = JSON(str(data))
 
     except Exception as err:
         print("|||fail to get json, reason: " + str(err) + ' ||| ' + xhr_url)
         if retries > 0:
-            time.sleep(random.randint(5, 15))
+            time.sleep(random.randint(10, 15))
             print("try again, %d times left" % int(retries - 1))
             return get_record(residence_id, retries - 1)
         else:
             print("|||failed in : %d |||" % residence_id)
-            with open(city_failed_file, 'a') as f:
+            with open(city_zhuzhai_failed_file, 'a') as f:
                 f.write(residence_id + '\n')
     else:
         # print(json_data)
-
+        info = json_data['project'][0]
         # print(info['xiaoqudomain']+ '                      lol')
         result = info['projname'] + '\t' + info['xiaoqudomain'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
                  + info['coordy'] + '\t' + info['addresslong'] + '\t' + info['purpose']
@@ -284,45 +262,9 @@ def go_thread(link):
             results = []
             page_url = url[0:-6] + str(i) + '_0_0/'
             soup = download_page(page_url)
-            ids = get_ids(soup, page_url)
-            if ids:
-                div_list = soup.findAll('div', attrs={'class': 'list rel'})
-                for div, residence_id in zip(div_list, ids):
-                    residence_type = div.find('span', attrs={'class': 'plotFangType'}).getText()
-                    # print(residence_type)
-                    if residence_type == '写字楼' or residence_type == '商铺':
-                        res = get_record_2(div)
-                    else:
-                        res = get_record(residence_id)
-                    if res:
-                        results.append(res)
-                with open(city_file, 'a', encoding='utf-8') as f:
-                    for res in results:
-                        try:
-                            f.write(res + '\n')
-                            print('+1', end=' ')
-                        except Exception as err:
-                            print('           so sad *_* :' + str(err))
-                            pattern = re.compile(r'http\:(.*)\/')
-                            match = pattern.search(str(res))
-                            if match:
-                                res = match.group()
-                                with open(city_luanma_failed_file, 'a') as sad:
-                                    sad.write(res + '\n')
-    except Exception as err:
-        print('lol   go thread  :' + str(err))
-        with open(city_failed_file, 'a') as sad:
-            sad.write(link + '\n')
-
-
-def go_after_scraping(link):
-    print('after go go go!!!')
-    try:
-        results = []
-        soup = download_page(link)
-        ids = get_ids(soup, link)
-        if ids:
+            ids = get_ids(soup)
             div_list = soup.findAll('div', attrs={'class': 'list rel'})
+
             for div, residence_id in zip(div_list, ids):
                 residence_type = div.find('span', attrs={'class': 'plotFangType'}).getText()
                 # print(residence_type)
@@ -330,9 +272,9 @@ def go_after_scraping(link):
                     res = get_record_2(div)
                 else:
                     res = get_record(residence_id)
-                if res:
+                if re:
                     results.append(res)
-            with open(city_file, 'a', encoding='utf-8') as f:
+            with open(city_file, 'a') as f:
                 for res in results:
                     try:
                         f.write(res + '\n')
@@ -341,61 +283,87 @@ def go_after_scraping(link):
                         print('           so sad *_* :' + str(err))
                         pattern = re.compile(r'http\:(.*)\/')
                         match = pattern.search(str(res))
-                        if match:
-                            res = match.group()
+                        res = match.group()
+                        if res:
                             with open(city_luanma_failed_file, 'a') as sad:
                                 sad.write(res + '\n')
     except Exception as err:
         print('lol   go thread  :' + str(err))
-        with open(city_failed_file, 'a') as sad:
-            sad.write(link + '\n')
+
+
+def get_amount(link):
+    print('go go go!!!')
+    num = 0
+    try:
+        url = URL + link
+        soup = download_page(url)
+        page_num = get_page_num(soup)
+        for i in range(1, page_num+1):
+            results = []
+            page_url = url[0:-6] + str(i) + '_0_0/'
+            print(page_url)
+            soup = download_page(page_url)
+            ids = get_ids(soup)
+            div_list = soup.findAll('div', attrs={'class': 'list rel'})
+
+            for div, residence_id in zip(div_list, ids):
+                residence_type = div.find('span', attrs={'class': 'plotFangType'}).getText()
+                # print(residence_type)
+                # if residence_type == '写字楼' or residence_type == '商铺':
+                #     res = get_record_2(div)
+                # else:
+                #     res = get_record(residence_id)
+                # if re:
+                #     results.append(res)
+                num += 1
+            # with open(city_file, 'a') as f:
+            #     for res in results:
+            #         try:
+            #             f.write(res + '\n')
+            #             print('+1', end=' ')
+            #         except Exception as err:
+            #             print('           so sad *_* :' + str(err))
+            #             pattern = re.compile(r'http\:(.*)\/')
+            #             match = pattern.search(str(res))
+            #             res = match.group()
+            #             if res:
+            #                 with open(city_luanma_failed_file, 'a') as sad:
+            #                     sad.write(res + '\n')
+    except Exception as err:
+        print('lol   go thread  :' + str(err))
+    else:
+        return num
 
 
 @fn_timer
 def main():
     urls = get_districts_urls(RESIDENCE_URL)
 
-    print(urls)
+    # urls = get_districts_urls(JINAN_RESIDENCE_URL)
 
-    pool = ThreadPool(20)
-    pool.map(go_thread, urls)
+    print(urls)
+    # print(get_amount('/housing/_7030_0_0_0_0_3_0_0/'))
+
+    num = 0
+
+    # for url in urls:
+    #     num += get_amount(url)
+    #
+    pool = ThreadPool(5)
+    results = pool.map(get_amount, urls)
     pool.close()
     pool.join()
 
-    # # ------------------------- 重跑获取失败的小区列表网页
-    # urls = []
-    # with open(city_luanma_failed_file, 'r') as f:
-    #     lines = f.readlines()
-    #     for line in lines:
-    #         urls.append(line.strip())
-    # print(urls)
-    # pool = ThreadPool(10)
-    # pool.map(go_after_scraping, urls)
+    for res in results:
+        num += res
+    print(num)
+
+    # pool = ThreadPool(5)
+    # pool.map(go_thread, urls)
     # pool.close()
     # pool.join()
 
-    # # ------------------------- 重跑获取失败的写字楼商铺网页
-    # urls = []
-    # with open('results/fangtianxia_guangzhou_xiezilou_failed.txt', 'r') as f:
-    #     lines = f.readlines()
-    #     for line in lines:
-    #         urls.append(line.strip())
-    # print(urls)
-    # pool = ThreadPool(2)
-    # results = pool.map(, urls)
-    # pool.close()
-    # pool.join()
-
-
-    # go_thread('/housing/492_4979_0_0_0_0_1_0_0/')
-
-    # get_record(2610419222)
-
-    # download_page('http://yunhexiaoqu027.fang.com/')
-
-    # urls = ['http://esf.nn.fang.com/housing/_15174_0_0_0_0_2_0_0/']
-    # for url in urls:
-    #     go_after_scraping(url)
+    go_thread('/housing/_7028_0_0_0_0_3_0_0/')
 
     # get_ids(download_page('http://esf.zh.fang.com/housing/__0_0_0_0_1_0_0/'))
 

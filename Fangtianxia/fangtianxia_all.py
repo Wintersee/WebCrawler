@@ -27,15 +27,41 @@ import re
 # RESIDENCE_URL = 'http://esf.wuhan.fang.com/housing/'
 # CITY = 'wuhan'
 
-URL = 'http://esf.sz.fang.com'
-RESIDENCE_URL = 'http://esf.sz.fang.com/housing/'
-CITY = 'shenzhen'
+# URL = 'http://esf.sz.fang.com'
+# RESIDENCE_URL = 'http://esf.sz.fang.com/housing/'
+# CITY = 'shenzhen'
 
+# URL = 'http://esf.cd.fang.com'
+# RESIDENCE_URL = 'http://esf.cd.fang.com/housing/'
+# CITY = 'chengdu'
 
+# URL = 'http://esf.tj.fang.com'
+# RESIDENCE_URL = 'http://esf.tj.fang.com/housing/'
+# CITY = 'tianjin'
+
+# URL = 'http://esf.suzhou.fang.com'
+# RESIDENCE_URL = 'http://esf.suzhou.fang.com/housing/'
+# CITY = 'suzhou'
+
+# URL = 'http://esf.xian.fang.com'
+# RESIDENCE_URL = 'http://esf.xian.fang.com/housing/'
+# CITY = 'xian'
+
+URL = 'http://esf.zz.fang.com'
+RESIDENCE_URL = 'http://esf.zz.fang.com/housing/'
+CITY = 'zhengzhou'
+
+# 正确结果
 city_file = 'results/fangtianxia_' + CITY + '.txt'
+# 获取写字楼，商铺失败的链接
 city_xiezilou_failed_file = 'results/fangtianxia_' + CITY + '_xiezilou_failed.txt'
+# 获取住宅、别墅失败的链接
+city_zhuzhai_failed_file = 'results/fangtianxia_' + CITY + '_zhuzhai_failed.txt'
+# 未知原因的失败 和 获取ids时失败 的小区列表链接
 city_failed_file = 'results/fangtianxia_' + CITY + '_failed.txt'
+# 写入时因特殊字符乱码失败的链接
 city_luanma_failed_file = 'results/fangtianxia_' + CITY + '_luanma_failed.txt'
+# 请求url时失败的链接 ---- 一般不会失败
 city_url_failed_file = 'results/fangtianxia_' + CITY + '_url_failed.txt'
 
 # JINAN_URL = 'http://esf.jn.fang.com/'
@@ -115,7 +141,7 @@ def get_ids(soup, link):
         print(ids)
     else:
         ids = ''
-        with open(city_luanma_failed_file, 'a') as sad:
+        with open(city_failed_file, 'a') as sad:
             sad.write(link + '\n')
     return ids
 
@@ -261,14 +287,18 @@ def get_record(residence_id, retries=40):
             print("try again, %d times left" % int(retries - 1))
             return get_record(residence_id, retries - 1)
         else:
-            print("|||failed in : %d |||" % residence_id)
-            with open(city_failed_file, 'a') as f:
-                f.write(residence_id + '\n')
+            print("|||failed in : %s |||" % xhr_url)
+            with open(city_zhuzhai_failed_file, 'a') as f:
+                f.write(xhr_url + '\n')
     else:
         # print(json_data)
 
         # print(info['xiaoqudomain']+ '                      lol')
-        result = info['projname'] + '\t' + info['xiaoqudomain'] + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
+        # 有的小区url已废弃
+        xiaoqu_domain = residence_id
+        if info['xiaoqudomain']:
+            xiaoqu_domain = info['xiaoqudomain']
+        result = info['projname'] + '\t' + xiaoqu_domain + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
                  + info['coordy'] + '\t' + info['addresslong'] + '\t' + info['purpose']
         print(result)
     return result
@@ -276,8 +306,8 @@ def get_record(residence_id, retries=40):
 
 def go_thread(link):
     print('go go go!!!')
+    url = URL + link
     try:
-        url = URL + link
         soup = download_page(url)
         page_num = get_page_num(soup)
         for i in range(1, page_num+1):
@@ -297,22 +327,22 @@ def go_thread(link):
                     if res:
                         results.append(res)
                 with open(city_file, 'a', encoding='utf-8') as f:
-                    for res in results:
+                    for result in results:
                         try:
-                            f.write(res + '\n')
+                            f.write(result + '\n')
                             print('+1', end=' ')
                         except Exception as err:
-                            print('           so sad *_* :' + str(err))
+                            print('   mess!!!        so sad *_* :' + str(err))
                             pattern = re.compile(r'http\:(.*)\/')
-                            match = pattern.search(str(res))
+                            match = pattern.search(str(result))
                             if match:
-                                res = match.group()
+                                luanma_url = match.group()
                                 with open(city_luanma_failed_file, 'a') as sad:
-                                    sad.write(res + '\n')
+                                    sad.write(luanma_url + '\n')
     except Exception as err:
-        print('lol   go thread  :' + str(err))
+        print('lol   do not know exact reason: ' + str(err))
         with open(city_failed_file, 'a') as sad:
-            sad.write(link + '\n')
+            sad.write(url + '\n')
 
 
 def go_after_scraping(link):
@@ -357,7 +387,7 @@ def main():
 
     print(urls)
 
-    pool = ThreadPool(20)
+    pool = ThreadPool(5)
     pool.map(go_thread, urls)
     pool.close()
     pool.join()

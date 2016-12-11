@@ -1,0 +1,65 @@
+try：
+	go thread('/housing/_4095_0_0_0_0_1_0_0/')
+
+	download_page(url)
+
+	get_page_num(soup)
+
+		page_url
+		
+		download_page(page_url)
+			try：
+				请求
+				检测
+			except:
+				重新请求
+				或者写入url_failed(page_url)文件
+
+		get_ids(soup,page_url):
+			正则表达式获取ids
+			如果成功match：
+				ids = match.group()
+			如果失败：
+				ids = ‘’
+				写入city_failed(小区列表的url)
+			返回 ids
+			
+		
+		如果存在ids：
+			得到小区的div
+				for div， id：
+					判断小区类型：
+						写字楼：
+							结果=get_record_2:(div)
+								从div里获取name,link,price,purpose
+								try:
+									进入小区详细页面：
+										获取address
+										获取map——url：
+											进入map页面：
+												正则表达式获取px,py
+								except:
+									写入 xiezilou_failed(写字楼url)文件
+								else：
+									返回 result
+								
+						住宅：
+							结果=get_record（id)：
+								拼接xhr+url
+								try:
+									获取json数据
+								except:
+									重新请求
+									或者写入 city_zhuzhai_failed_file(请求json的url)文件
+								else:
+									返回 result
+							
+					try:			
+						写入 city file(正确结果)文件
+					except:
+						报乱码错误
+						用正则表达式从结果中获取链接
+						将乱码小区的链接写入luanma_failed(乱码链接)文件
+except：
+	不知具体原因，保障程序不中断运行
+	写入city_failed(小区列表的url)文件

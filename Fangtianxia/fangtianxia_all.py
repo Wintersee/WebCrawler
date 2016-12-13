@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-import time, random
+import time
+import random
 import math
 from multiprocessing.dummy import Pool as ThreadPool
 from functions import fn_timer
@@ -47,28 +48,53 @@ import re
 # RESIDENCE_URL = 'http://esf.xian.fang.com/housing/'
 # CITY = 'xian'
 
-URL = 'http://esf.zz.fang.com'
-RESIDENCE_URL = 'http://esf.zz.fang.com/housing/'
-CITY = 'zhengzhou'
+# URL = 'http://esf.zz.fang.com'
+# RESIDENCE_URL = 'http://esf.zz.fang.com/housing/'
+# CITY = 'zhengzhou'
 
+# URL = 'http://esf.cs.fang.com'
+# RESIDENCE_URL = 'http://esf.cs.fang.com/housing/'
+# CITY = 'changsha'
+
+# URL = 'http://esf.nn.fang.com'
+# RESIDENCE_URL = 'http://esf.nn.fang.com/housing/'
+# CITY = 'nanning'
+
+# URL = 'http://esf.qd.fang.com'
+# RESIDENCE_URL = 'http://esf.qd.fang.com/housing/'
+# CITY = 'qingdao'
+
+# URL = 'http://esf.km.fang.com'
+# RESIDENCE_URL = 'http://esf.km.fang.com/housing/'
+# CITY = 'kunming'
+
+
+# 江苏：changzhou cz huaian huaian kunshan ks jiangyin jy nantong tz taizhou taizhou
+CITY = 'xuzhou'     # nanchang wuxi fuzhou xiamen suzhou hangzhou dalian dongguan nanjing
+CITY_SHORT = 'xz'  # nc wuxi fz xm suzhou hz dl dg nanjing
+URL = 'http://esf.'+CITY_SHORT+'.fang.com'
+RESIDENCE_URL = 'http://esf.'+CITY_SHORT+'.fang.com/housing/'
+
+
+PATH = 'C:/workspace/GitHub/data/WebCrawler/Fangtianxia/'
 # 正确结果
-city_file = 'results/fangtianxia_' + CITY + '.txt'
+city_file = PATH + 'fangtianxia_' + CITY + '.txt'
 # 获取写字楼，商铺失败的链接
-city_xiezilou_failed_file = 'results/fangtianxia_' + CITY + '_xiezilou_failed.txt'
+city_xiezilou_failed_file = PATH + 'fangtianxia_' + CITY + '_xiezilou_failed.txt'
 # 获取住宅、别墅失败的链接
-city_zhuzhai_failed_file = 'results/fangtianxia_' + CITY + '_zhuzhai_failed.txt'
+city_zhuzhai_failed_file = PATH + 'fangtianxia_' + CITY + '_zhuzhai_failed.txt'
 # 未知原因的失败 和 获取ids时失败 的小区列表链接
-city_failed_file = 'results/fangtianxia_' + CITY + '_failed.txt'
+city_failed_file = PATH + 'fangtianxia_' + CITY + '_failed.txt'
 # 写入时因特殊字符乱码失败的链接
-city_luanma_failed_file = 'results/fangtianxia_' + CITY + '_luanma_failed.txt'
+city_luanma_failed_file = PATH + 'fangtianxia_' + CITY + '_luanma_failed.txt'
 # 请求url时失败的链接 ---- 一般不会失败
-city_url_failed_file = 'results/fangtianxia_' + CITY + '_url_failed.txt'
+city_url_failed_file = PATH + 'fangtianxia_' + CITY + '_url_failed.txt'
 
 # JINAN_URL = 'http://esf.jn.fang.com/'
 # JINAN_RESIDENCE_URL = 'http://esf.jn.fang.com/housing/'
 
 
-def download_page(url, retries=30):
+def download_page(url, retries=10):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
 
     try:
@@ -111,7 +137,9 @@ def get_districts_urls(link):
     for letter in alphabet_list:
         districts = letter.findAll('a')
         for district in districts:
-            link_list.append(district.get('href'))
+            url = district.get('href')
+            url = url[0:-10] + '1_0_1_0_0/'
+            link_list.append(url)
     return link_list
 
 
@@ -122,13 +150,13 @@ def get_page_num(soup):
     return page_num
 
 
-def get_id(link):
-    # print(link+'     lol')
-    detail_soup = download_page(link)
-    # print(detail_soup)
-    residence_id = detail_soup.find('input', attrs={'id': "projCode"}).get('value')
-    # print(str(residence_id))
-    return residence_id
+# def get_id(link):
+#     # print(link+'     lol')
+#     detail_soup = download_page(link)
+#     # print(detail_soup)
+#     residence_id = detail_soup.find('input', attrs={'id': "projCode"}).get('value')
+#     # print(str(residence_id))
+#     return residence_id
 
 
 def get_ids(soup, link):
@@ -139,10 +167,12 @@ def get_ids(soup, link):
     if match:
         ids = match.group()[14:-2].split(',')
         print(ids)
+        print(link)
     else:
         ids = ''
-        with open(city_failed_file, 'a') as sad:
-            sad.write(link + '\n')
+        # print('------------------------------------------------- get ids failed: ' + link)
+        # with open(city_failed_file, 'a') as sad:
+        #     sad.write(link + '\n')
     return ids
 
 
@@ -172,7 +202,7 @@ def get_record_2(div):
         if map_div:
             map_url = map_div.find('iframe').get('src')
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
-            v = 40
+            v = 10
             while v:
                 response = requests.get(map_url, headers=headers)
                 data = response.content
@@ -251,14 +281,23 @@ def get_record_2(div):
         #     return result
 
 
-def get_record(residence_id, retries=40):
+def get_record(residence_id, div, retries=10):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
     # xhr_url = 'http://esf.fang.com/newsecond/Map/Interfaces/baidu/GetTPointByKeyword.aspx?projcode='
     xhr_url = URL + '/newsecond/Map/Interfaces/baidu/GetTPointByKeyword.aspx?projcode='
     xhr_url += str(residence_id)
-    # print(xhr_url)
 
     result = ''
+
+    xiaoqu_domain = div.find('a', attrs={'class': 'plotTit'}).get('href')
+    if 'http' not in xiaoqu_domain:
+        xiaoqu_domain = URL + xiaoqu_domain
+
+    price_div = div.find('p', attrs={'class': 'priceAverage'})
+    if price_div:
+        price = price_div.find('span').getText()
+    else:
+        price = '无'
 
     try:
         time.sleep(round(random.uniform(0, 3), 2))
@@ -295,10 +334,12 @@ def get_record(residence_id, retries=40):
 
         # print(info['xiaoqudomain']+ '                      lol')
         # 有的小区url已废弃
-        xiaoqu_domain = residence_id
-        if info['xiaoqudomain']:
-            xiaoqu_domain = info['xiaoqudomain']
-        result = info['projname'] + '\t' + xiaoqu_domain + '\t' + info['avgprice'][0:-4] + '\t' + info['coordx'] + '\t' \
+
+        if not (xiaoqu_domain or info['xiaoqudomain']):
+            xiaoqu_domain = residence_id
+        # if info['avgprice'][0:-4]:
+        #     avgprice = info['avgprice'][0:-4]
+        result = info['projname'] + '\t' + xiaoqu_domain + '\t' + price + '\t' + info['coordx'] + '\t' \
                  + info['coordy'] + '\t' + info['addresslong'] + '\t' + info['purpose']
         print(result)
     return result
@@ -315,6 +356,22 @@ def go_thread(link):
             page_url = url[0:-6] + str(i) + '_0_0/'
             soup = download_page(page_url)
             ids = get_ids(soup, page_url)
+
+            if ids == '':
+                retries = 10
+                while retries:
+                    print('------------------------------- try to get ids again: ' + page_url)
+                    soup = download_page(page_url)
+                    ids = get_ids(soup, page_url)
+                    if ids:
+                        retries = 0
+                    else:
+                        if retries == 1:
+                            print('------------------------------- get ids failed: ' + page_url)
+                            with open(city_failed_file, 'a') as sad:
+                                sad.write(link + '\n')
+                        retries -= 1
+
             if ids:
                 div_list = soup.findAll('div', attrs={'class': 'list rel'})
                 for div, residence_id in zip(div_list, ids):
@@ -323,7 +380,8 @@ def go_thread(link):
                     if residence_type == '写字楼' or residence_type == '商铺':
                         res = get_record_2(div)
                     else:
-                        res = get_record(residence_id)
+                        # 部分城市的json数据里不含链接及价格
+                        res = get_record(residence_id, div)
                     if res:
                         results.append(res)
                 with open(city_file, 'a', encoding='utf-8') as f:
@@ -351,6 +409,7 @@ def go_after_scraping(link):
         results = []
         soup = download_page(link)
         ids = get_ids(soup, link)
+
         if ids:
             div_list = soup.findAll('div', attrs={'class': 'list rel'})
             for div, residence_id in zip(div_list, ids):
@@ -359,47 +418,49 @@ def go_after_scraping(link):
                 if residence_type == '写字楼' or residence_type == '商铺':
                     res = get_record_2(div)
                 else:
-                    res = get_record(residence_id)
+                    res = get_record(residence_id, div)
                 if res:
                     results.append(res)
             with open(city_file, 'a', encoding='utf-8') as f:
-                for res in results:
+                for result in results:
                     try:
-                        f.write(res + '\n')
+                        f.write(result + '\n')
                         print('+1', end=' ')
                     except Exception as err:
-                        print('           so sad *_* :' + str(err))
+                        print('     mess!!!       so sad *_* :' + str(err))
                         pattern = re.compile(r'http\:(.*)\/')
-                        match = pattern.search(str(res))
+                        match = pattern.search(str(result))
                         if match:
-                            res = match.group()
+                            luanma_url = match.group()
                             with open(city_luanma_failed_file, 'a') as sad:
-                                sad.write(res + '\n')
+                                sad.write(luanma_url + '\n')
     except Exception as err:
-        print('lol   go thread  :' + str(err))
+        print('lol    do not know exact reason: ' + str(err))
         with open(city_failed_file, 'a') as sad:
             sad.write(link + '\n')
 
 
 @fn_timer
 def main():
+
+    # ------------------------ 抓取代码
     urls = get_districts_urls(RESIDENCE_URL)
 
     print(urls)
 
-    pool = ThreadPool(5)
+    pool = ThreadPool(10)
     pool.map(go_thread, urls)
     pool.close()
     pool.join()
 
     # # ------------------------- 重跑获取失败的小区列表网页
     # urls = []
-    # with open(city_luanma_failed_file, 'r') as f:
+    # with open(city_failed_file, 'r') as f:
     #     lines = f.readlines()
     #     for line in lines:
     #         urls.append(line.strip())
     # print(urls)
-    # pool = ThreadPool(10)
+    # pool = ThreadPool(5)
     # pool.map(go_after_scraping, urls)
     # pool.close()
     # pool.join()

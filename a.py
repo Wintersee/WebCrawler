@@ -12,56 +12,6 @@ import re
 from json import loads as JSON
 
 
-def download_page(url, retries=10):
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
-
-    try:
-
-        proxies = {
-            "http": "http://114.231.156.208:8088",
-            "http": "http://192.169.179.189:8080",
-
-        }
-
-        response = requests.get(url, headers=headers, proxies=proxies)
-        print(response.headers['content-type'])
-        print(response.encoding)
-        print(response.apparent_encoding)
-        print(requests.utils.get_encodings_from_content(response.text))
-
-        if response.encoding == 'ISO-8859-1':
-            encodings = requests.utils.get_encodings_from_content(response.text)
-            if encodings:
-                encoding = encodings[0]
-            else:
-                encoding = response.apparent_encoding
-        encode_content = response.content.decode('GB18030', 'replace').encode('utf-8', 'replace')
-
-        soup = BeautifulSoup(encode_content, "html.parser")
-        print(soup)
-        # if response.encoding == 'gb2312':
-        #     data = response.content.decode("GB18030").encode('utf-8')
-        # # if response.encoding == 'ISO-8859-1':
-        # else:
-        #     data = response.content.decode("GB18030").encode('utf-8')
-        #
-        # soup = BeautifulSoup(data, "html.parser")
-        #
-        # if 'aspx?newcode=' not in url:
-        #     test = soup.find('a', attrs={'href': 'http://wap.fang.com/xc/mobile.html'}).getText()
-
-    except Exception as err:
-        print("|||test failed ! didn't get the right content: "+str(err)+' ||| ' + url)
-        if retries > 0:
-            time.sleep(random.randint(10, 15))
-            print("try again, %d times left" % int(retries-1))
-            return download_page(url, retries - 1)
-        else:
-            print("|||failed in scraping : %s|||" % url)
-
-    # return soup
-
-download_page('http://esf.sjz.fang.com/')
 
 
 

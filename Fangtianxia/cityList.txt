@@ -1,0 +1,9 @@
+http://esf.gy.fang.com	贵州	贵阳
+http://esf.lps.fang.com	贵州	六盘水
+http://esf.zunyi.fang.com	贵州	遵义
+http://esf.anshun.fang.com	贵州	安顺
+http://esf.tongren.fang.com	贵州	铜仁
+http://esf.bijie.fang.com	贵州	毕节
+http://esf.xn.fang.com	青海	西宁
+http://esf.haidong.fang.com	青海	海东
+http://esf.sh.fang.com	上海	上海

@@ -8,68 +8,7 @@ from functions import fn_timer
 from json import loads as JSON
 import re
 
-# URL = 'http://esf.sy.fang.com'
-# RESIDENCE_URL = 'http://esf.sy.fang.com/housing/'
-# CITY = 'shenyang'
 
-# URL = 'http://esf.gz.fang.com'
-# RESIDENCE_URL = 'http://esf.gz.fang.com/housing/'
-# CITY = 'guangzhou'
-
-# URL = 'http://esf.sjz.fang.com'
-# RESIDENCE_URL = 'http://esf.sjz.fang.com/housing/'
-# CITY = 'shijiazhuang'
-
-# URL = 'http://esf.cq.fang.com'
-# RESIDENCE_URL = 'http://esf.cq.fang.com/housing/'
-# CITY = 'chongqing'
-
-# URL = 'http://esf.wuhan.fang.com'
-# RESIDENCE_URL = 'http://esf.wuhan.fang.com/housing/'
-# CITY = 'wuhan'
-
-# URL = 'http://esf.sz.fang.com'
-# RESIDENCE_URL = 'http://esf.sz.fang.com/housing/'
-# CITY = 'shenzhen'
-
-# URL = 'http://esf.cd.fang.com'
-# RESIDENCE_URL = 'http://esf.cd.fang.com/housing/'
-# CITY = 'chengdu'
-
-# URL = 'http://esf.tj.fang.com'
-# RESIDENCE_URL = 'http://esf.tj.fang.com/housing/'
-# CITY = 'tianjin'
-
-# URL = 'http://esf.suzhou.fang.com'
-# RESIDENCE_URL = 'http://esf.suzhou.fang.com/housing/'
-# CITY = 'suzhou'
-
-# URL = 'http://esf.xian.fang.com'
-# RESIDENCE_URL = 'http://esf.xian.fang.com/housing/'
-# CITY = 'xian'
-
-# URL = 'http://esf.zz.fang.com'
-# RESIDENCE_URL = 'http://esf.zz.fang.com/housing/'
-# CITY = 'zhengzhou'
-
-# URL = 'http://esf.cs.fang.com'
-# RESIDENCE_URL = 'http://esf.cs.fang.com/housing/'
-# CITY = 'changsha'
-
-# URL = 'http://esf.nn.fang.com'
-# RESIDENCE_URL = 'http://esf.nn.fang.com/housing/'
-# CITY = 'nanning'
-
-# URL = 'http://esf.qd.fang.com'
-# RESIDENCE_URL = 'http://esf.qd.fang.com/housing/'
-# CITY = 'qingdao'
-
-# URL = 'http://esf.km.fang.com'
-# RESIDENCE_URL = 'http://esf.km.fang.com/housing/'
-# CITY = 'kunming'
-
-
-# 江苏：changzhou cz huaian huaian kunshan ks jiangyin jy nantong tz taizhou taizhou xuzhou xz
 CITY = 'yulin'     # nanchang wuxi fuzhou xiamen suzhou hangzhou dalian dongguan nanjing
 CITY_SHORT = 'yl'  # nc wuxi fz xm suzhou hz dl dg nanjing
 URL = 'http://esf.'+CITY_SHORT+'.fang.com'
@@ -93,9 +32,6 @@ city_luanma_failed_file = PATH + 'fangtianxia_' + CITY + '_luanma_failed.txt'
 # 请求url时失败的链接 ---- 一般不会失败
 city_url_failed_file = PATH + 'fangtianxia_' + CITY + '_url_failed.txt'
 
-# JINAN_URL = 'http://esf.jn.fang.com/'
-# JINAN_RESIDENCE_URL = 'http://esf.jn.fang.com/housing/'
-
 
 def download_page(url, retries=10):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'}
@@ -103,18 +39,8 @@ def download_page(url, retries=10):
     try:
         time.sleep(round(random.uniform(1, 5), 2))
         response = requests.get(url, headers=headers)
-        # # print(response.encoding + '  response')
-        # if response.encoding == 'gb2312':
-        #     data = response.content.decode("GB18030").encode('utf-8')
-        # # if response.encoding == 'ISO-8859-1':
-        # else:
-        #     data = response.content.decode("GB18030").encode('utf-8')
         data = response.content.decode('GB18030', 'replace').encode('utf-8', 'replace')
-        # print(data)
-
         soup = BeautifulSoup(data, "html.parser")
-
-        # print(soup)
 
         if 'aspx?newcode=' not in url:
             test = soup.find('a', attrs={'href': 'http://wap.fang.com/xc/mobile.html'}).getText()
@@ -127,7 +53,7 @@ def download_page(url, retries=10):
             return download_page(url, retries - 1)
         else:
             print("|||failed in scraping : %s|||" % url)
-            with open(city_url_failed_file, 'a', encoding='utf-8') as f:
+            with open(city_url_failed_file, 'a', 'utf-8') as f:
                 f.write(url+'\n')
             # return ''
     return soup
@@ -155,15 +81,6 @@ def get_page_num(soup):
     return page_num
 
 
-# def get_id(link):
-#     # print(link+'     lol')
-#     detail_soup = download_page(link)
-#     # print(detail_soup)
-#     residence_id = detail_soup.find('input', attrs={'id': "projCode"}).get('value')
-#     # print(str(residence_id))
-#     return residence_id
-
-
 def get_ids(soup, link):
     script = soup.findAll('script', attrs={'type': 'text/javascript', 'src': '', 'language': ''})[1]
 
@@ -175,9 +92,6 @@ def get_ids(soup, link):
         print(link)
     else:
         ids = ''
-        # print('------------------------------------------------- get ids failed: ' + link)
-        # with open(city_failed_file, 'a') as sad:
-        #     sad.write(link + '\n')
     return ids
 
 
@@ -411,70 +325,27 @@ def go_thread(link):
             sad.write(url + '\n')
 
 
-# def go_thread_for_cities(link, ):
-#     print('go go go!!!')
-#     url = URL + link
-#     try:
-#         soup = download_page(url)
-#         page_num = get_page_num(soup)
-#         for i in range(1, page_num+1):
-#             results = []
-#             page_url = url[0:-6] + str(i) + '_0_0/'
-#             soup = download_page(page_url)
-#             ids = get_ids(soup, page_url)
-#
-#             if ids == '':
-#                 retries = 10
-#                 while retries:
-#                     print('------------------------------- try to get ids again: ' + page_url)
-#                     soup = download_page(page_url)
-#                     ids = get_ids(soup, page_url)
-#                     if ids:
-#                         retries = 0
-#                     else:
-#                         if retries == 1:
-#                             print('------------------------------- get ids failed: ' + page_url)
-#                             with open(city_failed_file, 'a') as sad:
-#                                 sad.write(link + '\n')
-#                         retries -= 1
-#
-#             if ids:
-#                 div_list = soup.findAll('div', attrs={'class': 'list rel'})
-#                 for div, residence_id in zip(div_list, ids):
-#                     residence_type = div.find('span', attrs={'class': 'plotFangType'}).getText()
-#                     # print(residence_type)
-#                     if residence_type == '写字楼' or residence_type == '商铺':
-#                         res = get_record_2(div)
-#                     else:
-#                         # 部分城市的json数据里不含链接及价格
-#                         res = get_record(residence_id, div)
-#                     if res:
-#                         results.append(res)
-#                 with open(city_file, 'a', encoding='utf-8') as f:
-#                     for result in results:
-#                         try:
-#                             f.write(result + '\n')
-#                             print('+1', end=' ')
-#                         except Exception as err:
-#                             print('   mess!!!        so sad *_* :' + str(err))
-#                             pattern = re.compile(r'http\:(.*)\/')
-#                             match = pattern.search(str(result))
-#                             if match:
-#                                 luanma_url = match.group()
-#                                 with open(city_luanma_failed_file, 'a') as sad:
-#                                     sad.write(luanma_url + '\n')
-#     except Exception as err:
-#         print('lol   do not know exact reason: ' + str(err))
-#         with open(city_failed_file, 'a') as sad:
-#             sad.write(url + '\n')
-
-
 def go_after_scraping(link):
     print('after go go go!!!')
     try:
         results = []
         soup = download_page(link)
         ids = get_ids(soup, link)
+
+        if ids == '':
+            retries = 10
+            while retries:
+                print('------------------------------- try to get ids again: ' + link)
+                soup = download_page(link)
+                ids = get_ids(soup, link)
+                if ids:
+                    retries = 0
+                else:
+                    if retries == 1:
+                        print('------------------------------- get ids failed: ' + link)
+                        with open(city_failed_file, 'a') as sad:
+                            sad.write(link + '\n')
+                    retries -= 1
 
         if ids:
             div_list = soup.findAll('div', attrs={'class': 'list rel'})
@@ -508,54 +379,96 @@ def go_after_scraping(link):
 
 @fn_timer
 def main():
-    # print(download_page('http://esf.sh.fang.com/housing/'))
+    # failed_file_list = ['fangtianxia_zunyi_failed.txt', 'fangtianxia_gy_failed.txt',
+    #                     'fangtianxia_guyuan_failed.txt', 'fangtianxia_wuzhong_failed.txt',
+    #                     'fangtianxia_yinchuan_failed.txt', 'fangtianxia_qujing_failed.txt',
+    #                     'fangtianxia_baoshan_failed.txt', 'fangtianxia_sanya_failed.txt',
+    #                     'fangtianxia_baoji_failed.txt', ]
 
-    # ------------------------文本城市列表抓取代码
-    city_list = []
-    with open('cityList.txt', 'r', encoding='utf-8') as f:
+    file = 'fangtianxia_bh_failed.txt'
+
+    global CITY_SHORT, URL, RESIDENCE_URL, PROVINCE, CITY_NAME, city_file, city_failed_file
+    global city_xiezilou_failed_file, city_zhuzhai_failed_file, city_luanma_failed_file, city_url_failed_file
+
+    CITY_SHORT = file[12:-11]
+    URL = 'http://esf.' + CITY_SHORT + '.fang.com'
+    file_path = PATH + file
+
+    PROVINCE = '广西'
+    CITY_NAME = '北海'
+
+    # 正确结果
+    city_file = PATH + 'fangtianxia_' + CITY_SHORT + '.txt'
+    # 获取写字楼，商铺失败的链接
+    city_xiezilou_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_xiezilou_failed.txt'
+    # 获取住宅、别墅失败的链接
+    city_zhuzhai_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_zhuzhai_failed.txt'
+    # 未知原因的失败 和 获取ids时失败 的小区列表链接
+    city_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_failed.txt'
+    # 写入时因特殊字符乱码失败的链接
+    city_luanma_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_luanma_failed.txt'
+    # 请求url时失败的链接 ---- 一般不会失败
+    city_url_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_url_failed.txt'
+
+    urls = []
+    with open(file_path, 'r') as f:
         lines = f.readlines()
         for line in lines:
-            city_list.append(line.strip())
-
-    pool = ThreadPool(3)
-
-    for city in city_list:
-        city_info = city.split('\t')
-        city_url = city_info[0]
-        province_name = city_info[1]
-        name = city_info[2]
-        print('begin scraping --------------------------------------------: ' + name + ' ' + city_url)
-
-        global CITY_SHORT, URL, RESIDENCE_URL, PROVINCE, CITY_NAME, city_file, city_failed_file
-        global city_xiezilou_failed_file, city_zhuzhai_failed_file, city_luanma_failed_file, city_url_failed_file
-
-        URL = city_url
-        RESIDENCE_URL = city_url + '/housing/'
-        CITY_SHORT = city_url[11:-9]
-
-        PROVINCE = province_name
-        CITY_NAME = name
-
-        # 正确结果
-        city_file = PATH + 'fangtianxia_' + CITY_SHORT + '.txt'
-        # 获取写字楼，商铺失败的链接
-        city_xiezilou_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_xiezilou_failed.txt'
-        # 获取住宅、别墅失败的链接
-        city_zhuzhai_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_zhuzhai_failed.txt'
-        # 未知原因的失败 和 获取ids时失败 的小区列表链接
-        city_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_failed.txt'
-        # 写入时因特殊字符乱码失败的链接
-        city_luanma_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_luanma_failed.txt'
-        # 请求url时失败的链接 ---- 一般不会失败
-        city_url_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_url_failed.txt'
-
-        urls = get_districts_urls(RESIDENCE_URL)
-
-        print(urls)
-
-        pool.map(go_thread, urls)
+            urls.append(line.strip())
+    print(urls)
+    pool = ThreadPool(5)
+    pool.map(go_after_scraping, urls)
     pool.close()
     pool.join()
+
+
+
+    # # ------------------------文本城市列表抓取代码
+    # city_list = []
+    # with open('cityList.txt', 'r') as f:
+    #     lines = f.readlines()
+    #     for line in lines:
+    #         city_list.append(line.strip())
+    #
+    # pool = ThreadPool(10)
+    #
+    # for city in city_list:
+    #     city_info = city.split('\t')
+    #     city_url = city_info[0]
+    #     province_name = city_info[1]
+    #     name = city_info[2]
+    #     print('begin scraping --------------------------------------------: ' + name + ' ' + city_url)
+    #
+    #     global CITY_SHORT, URL, RESIDENCE_URL, PROVINCE, CITY_NAME, city_file, city_failed_file
+    #     global city_xiezilou_failed_file, city_zhuzhai_failed_file, city_luanma_failed_file, city_url_failed_file
+    #
+    #     URL = city_url
+    #     RESIDENCE_URL = city_url + '/housing/'
+    #     CITY_SHORT = city_url[11:-9]
+    #
+    #     PROVINCE = province_name
+    #     CITY_NAME = name
+    #
+    #     # 正确结果
+    #     city_file = PATH + 'fangtianxia_' + CITY_SHORT + '.txt'
+    #     # 获取写字楼，商铺失败的链接
+    #     city_xiezilou_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_xiezilou_failed.txt'
+    #     # 获取住宅、别墅失败的链接
+    #     city_zhuzhai_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_zhuzhai_failed.txt'
+    #     # 未知原因的失败 和 获取ids时失败 的小区列表链接
+    #     city_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_failed.txt'
+    #     # 写入时因特殊字符乱码失败的链接
+    #     city_luanma_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_luanma_failed.txt'
+    #     # 请求url时失败的链接 ---- 一般不会失败
+    #     city_url_failed_file = PATH + 'fangtianxia_' + CITY_SHORT + '_url_failed.txt'
+    #
+    #     urls = get_districts_urls(RESIDENCE_URL)
+    #
+    #     print(urls)
+    #
+    #     pool.map(go_thread, urls)
+    # pool.close()
+    # pool.join()
 
 
     # # ------------------------ 单个城市抓取代码

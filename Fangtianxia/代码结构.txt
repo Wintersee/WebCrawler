@@ -1,4 +1,4 @@
-try£º
+ï»¿tryï¼š
 	go thread('/housing/_4095_0_0_0_0_1_0_0/')
 
 	download_page(url)
@@ -8,58 +8,58 @@ try£º
 		page_url
 		
 		download_page(page_url)
-			try£º
-				ÇëÇó
-				¼ì²â
+			tryï¼š
+				è¯·æ±‚
+				æ£€æµ‹
 			except:
-				ÖØĞÂÇëÇó
-				»òÕßĞ´Èëurl_failed(page_url)ÎÄ¼ş
+				é‡æ–°è¯·æ±‚
+				æˆ–è€…å†™å…¥url_failed(page_url)æ–‡ä»¶
 
 		get_ids(soup,page_url):
-			ÕıÔò±í´ïÊ½»ñÈ¡ids
-			Èç¹û³É¹¦match£º
+			æ­£åˆ™è¡¨è¾¾å¼è·å–ids
+			å¦‚æœæˆåŠŸmatchï¼š
 				ids = match.group()
-			Èç¹ûÊ§°Ü£º
-				ids = ¡®¡¯
-				Ğ´Èëcity_failed(Ğ¡ÇøÁĞ±íµÄurl)
-			·µ»Ø ids
+			å¦‚æœå¤±è´¥ï¼š
+				ids = â€˜â€™
+				å†™å…¥city_failed(å°åŒºåˆ—è¡¨çš„url)
+			è¿”å› ids
 			
 		
-		Èç¹û´æÔÚids£º
-			µÃµ½Ğ¡ÇøµÄdiv
-				for div£¬ id£º
-					ÅĞ¶ÏĞ¡ÇøÀàĞÍ£º
-						Ğ´×ÖÂ¥£º
-							½á¹û=get_record_2:(div)
-								´ÓdivÀï»ñÈ¡name,link,price,purpose
+		å¦‚æœå­˜åœ¨idsï¼š
+			å¾—åˆ°å°åŒºçš„div
+				for divï¼Œ idï¼š
+					åˆ¤æ–­å°åŒºç±»å‹ï¼š
+						å†™å­—æ¥¼ï¼š
+							ç»“æœ=get_record_2:(div)
+								ä»divé‡Œè·å–name,link,price,purpose
 								try:
-									½øÈëĞ¡ÇøÏêÏ¸Ò³Ãæ£º
-										»ñÈ¡address
-										»ñÈ¡map¡ª¡ªurl£º
-											½øÈëmapÒ³Ãæ£º
-												ÕıÔò±í´ïÊ½»ñÈ¡px,py
+									è¿›å…¥å°åŒºè¯¦ç»†é¡µé¢ï¼š
+										è·å–address
+										è·å–mapâ€”â€”urlï¼š
+											è¿›å…¥mapé¡µé¢ï¼š
+												æ­£åˆ™è¡¨è¾¾å¼è·å–px,py
 								except:
-									Ğ´Èë xiezilou_failed(Ğ´×ÖÂ¥url)ÎÄ¼ş
-								else£º
-									·µ»Ø result
+									å†™å…¥ xiezilou_failed(å†™å­—æ¥¼url)æ–‡ä»¶
+								elseï¼š
+									è¿”å› result
 								
-						×¡Õ¬£º
-							½á¹û=get_record£¨id)£º
-								Æ´½Óxhr+url
+						ä½å®…ï¼š
+							ç»“æœ=get_recordï¼ˆid)ï¼š
+								æ‹¼æ¥xhr+url
 								try:
-									»ñÈ¡jsonÊı¾İ
+									è·å–jsonæ•°æ®
 								except:
-									ÖØĞÂÇëÇó
-									»òÕßĞ´Èë city_zhuzhai_failed_file(ÇëÇójsonµÄurl)ÎÄ¼ş
+									é‡æ–°è¯·æ±‚
+									æˆ–è€…å†™å…¥ city_zhuzhai_failed_file(è¯·æ±‚jsonçš„url)æ–‡ä»¶
 								else:
-									·µ»Ø result
+									è¿”å› result
 							
 					try:			
-						Ğ´Èë city file(ÕıÈ·½á¹û)ÎÄ¼ş
+						å†™å…¥ city file(æ­£ç¡®ç»“æœ)æ–‡ä»¶
 					except:
-						±¨ÂÒÂë´íÎó
-						ÓÃÕıÔò±í´ïÊ½´Ó½á¹ûÖĞ»ñÈ¡Á´½Ó
-						½«ÂÒÂëĞ¡ÇøµÄÁ´½ÓĞ´Èëluanma_failed(ÂÒÂëÁ´½Ó)ÎÄ¼ş
-except£º
-	²»Öª¾ßÌåÔ­Òò£¬±£ÕÏ³ÌĞò²»ÖĞ¶ÏÔËĞĞ
-	Ğ´Èëcity_failed(Ğ¡ÇøÁĞ±íµÄurl)ÎÄ¼ş
+						æŠ¥ä¹±ç é”™è¯¯
+						ç”¨æ­£åˆ™è¡¨è¾¾å¼ä»ç»“æœä¸­è·å–é“¾æ¥
+						å°†ä¹±ç å°åŒºçš„é“¾æ¥å†™å…¥luanma_failed(ä¹±ç é“¾æ¥)æ–‡ä»¶
+exceptï¼š
+	ä¸çŸ¥å…·ä½“åŸå› ï¼Œä¿éšœç¨‹åºä¸ä¸­æ–­è¿è¡Œ
+	å†™å…¥city_failed(å°åŒºåˆ—è¡¨çš„url)æ–‡ä»¶

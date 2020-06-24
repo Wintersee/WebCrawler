@@ -132,7 +132,7 @@ def main():
 
     sender = 'hi_iamarobot@sina.com'
     receivers = '****@foxmail.com,****@qq.com'
-    subject = '大家好，我要开始表演了' 
+    subject = '大家好，我要开始表演了'
     content = '\n欢愉小胖注意听讲！ \n \n今天是北京时间 ' + file_date + ' ! \n' + \
               '本次爬取内容为北京时间本周一（' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start+46800)) + \
               '）至本周六（' + datetime.today().astimezone(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S") + '）期间的数据，' + \

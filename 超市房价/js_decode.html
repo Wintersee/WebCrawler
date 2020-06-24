@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>地理编码</title>
+    <link rel="stylesheet" href="https://cache.amap.com/lbs/static/main1119.css"/>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.8&key=87a1fb04f9788c3b8f81cf03d26b932d&plugin=AMap.Geocoder"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+</head>
+<!-- <body onload="geocoder()"> -->
+<div id="container"></div>
+<div id="tip">
+    
+    <span id="result"></span>
+</div>
+<script type="text/javascript">
+var fso;
+try { 
+fso=new ActiveXObject("Scripting.FileSystemObject"); 
+} catch (e) { 
+alert("当前浏览器不支持"); 
+} 
+
+var ForReading= 1;
+var ForWriting= 2;
+var ForAppending=8;
+
+
+var f0 = fso.OpenTextFile("C:\\workspace\\GitHub\\WebCrawler\\超市房价\\bj.txt", ForReading, true);
+
+var lines= f0.ReadAll().split("\r\n"); 
+// for (var i = 0; i < address.length; i++) { console.log(address[i]) }
+f0.Close();
+
+var arr = new Array();
+
+    var map = new AMap.Map("container", {
+        resizeEnable: true
+    });
+ 
+	console.log("+++++++"+lines.length);
+	for (var i = 0; i < lines.length; i++) { 
+	var line = lines[i];
+	var id = line.split("\t")[0];
+	var citycode = line.split("\t")[1];
+	var cityname = line.split("\t")[2];
+	var addr = line.split("\t")[3];
+	
+
+  
+		//console.log("+++++++"+address.length); 
+		//for (var i = 0; i < address.length; i++) { 
+		//	var addr = address[i]; 
+
+			//地理编码,返回地理编码结果
+			(function(id, citycode, cityname,addr){ 
+			
+				var geocoder = new AMap.Geocoder({
+            city: citycode, //城市，默认：“全国”
+            radius: 1000 //范围，默认：500
+           });
+		   
+			geocoder.getLocation(addr, function(status, result) { 
+            if (status === 'complete' && result.info === 'OK') {
+ 
+				//地理编码结果数组
+				var geocode = result.geocodes; 
+				for (var i = 0; i < geocode.length; i++) {
+				//拼接输出html
+				var resultStr = id + "\t" + citycode + "\t" + cityname + "\t" + addr
+                				+ "\t" + geocode[i].addressComponent.province + "\t" + 
+				                geocode[i].addressComponent.city + "\t" +
+								geocode[i].addressComponent.district + "\t" +
+								geocode[i].formattedAddress + "\t" +geocode[i].location.getLng() + "\t" + geocode[i].location.getLat() + "\t" + geocode[i].level;
+				//console.log("+++++++"+resultStr);
+ 
+				var f1 = fso.OpenTextFile("C:\\workspace\\GitHub\\WebCrawler\\超市房价\\test.txt", ForAppending, true);
+				f1.WriteLine(resultStr);  
+				f1.Close();
+                } 
+        document.getElementById("result").innerHTML = resultStr;
+            }else{
+			errorInfo = "--"+status+"--"+result.info+"--:"+cityname + "\t" +addr
+			console.log(errorInfo); 
+			var dataOutputFile2 = fso.OpenTextFile("C:\\workspace\\GitHub\\WebCrawler\\超市房价\\errors.txt", ForAppending, true);
+			dataOutputFile2.WriteLine(errorInfo);
+			dataOutputFile2.close();
+			}
+        });})(id, citycode, cityname,addr);
+	 
+	}
+ 
+
+</script>
+</body>
+</html>
+
+
+<!--     (function geocoder() {
+        var geocoder = new AMap.Geocoder({
+            city: "010", //城市，默认：“全国”
+            radius: 1000 //范围，默认：500
+        });
+        //地理编码,返回地理编码结果
+		for (var i = 0; i < address.length; i++) {
+        geocoder.getLocation(address[i], function(status, result) {
+            if (status === 'complete' && result.info === 'OK') {
+                geocoder_CallBack(result);
+            }
+        });
+		}
+    })()
+ 
+    //地理编码返回结果展示
+    function geocoder_CallBack(data) {
+        var resultStr = "";
+        //地理编码结果数组
+        var geocode = data.geocodes;
+        for (var i = 0; i < geocode.length; i++) {
+            //拼接输出html
+            resultStr += geocode[i].formattedAddress + "\t" + geocode[i].location.getLng() + "\t" + geocode[i].location.getLat() + " \t" +
+			geocode[i].level  ; 
+        }
+		console.log(resultStr);
+        map.setFitView();
+		arr.push(resultStr);
+		console.log(arr.length);
+		f1.WriteLine(resultStr);
+        document.getElementById("result").innerHTML = resultStr;  
+		
+    } -->

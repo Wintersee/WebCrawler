@@ -1,0 +1,24 @@
+----------no_data-------undefined-----------:遵义市	宣城市叠嶂中路46号 大统华安徽宣城店	宣城市（非常州市）
+----------no_data-------undefined-----------:遵义市	官渡区 大尔多超市新亚州店	官渡区广福路1号
+----------no_data-------undefined-----------:遵义市	溜云路口 乐买佳	南昌市青山湖区昌北经开区榴云路商业街88号
+----------error-------undefined-----------:遵义市	文化路步行街1号 百大超市萍乡店	萍乡市安源区文化路步行街1号
+----------no_data-------undefined-----------:遵义市	城东区 国芳综超(南川店)	找不到
+----------no_data-------undefined-----------:遵义市	阳东县 易初莲花阳东店	阳江市阳东区振士中路52号上景京源城购物中心 卜蜂莲花
+----------no_data-------undefined-----------:遵义市	简阳市河东新区德胜广场 百伦商贸简阳店	简阳市（非资阳市）
+------------------------------------------------
+----------no_data-------undefined-----------:西安市	灞桥区 润家宜鲜超市	西安市未央区浐灞二路与北辰路交汇处东北角 润家宜鲜超市
+----------no_data-------undefined-----------:西宁市	城东区 国芳综超(南川店)
+------------------------------------------------ 
+
+----------error-------undefined-----------:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--no_data--undefined--:西宁市	城东区 国芳综超(南川店)
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
+--error--undefined--:undefined	undefined
